@@ -94,7 +94,7 @@ struct SysAudio {
         if !apps.isEmpty, configuration.systemAudio != nil { configuration.systemAudio = .apps(apps) }
 
         let recorder = AudioRecorder()
-        let meter = LevelMeter()
+        let meter = LevelMeter(showMic: configuration.microphone != nil, showSystem: configuration.systemAudio != nil)
         recorder.onLevels = { mic, system in meter.update(mic: mic, system: system) }
         try await recorder.start(configuration, in: directory)
         print("Recording \(seconds)s into \(directory.path)…")
@@ -121,6 +121,13 @@ final class LevelMeter: @unchecked Sendable {
     private let lock = NSLock()
     private var mic: Float = 0
     private var system: Float = 0
+    private let showMic: Bool
+    private let showSystem: Bool
+
+    init(showMic: Bool, showSystem: Bool) {
+        self.showMic = showMic
+        self.showSystem = showSystem
+    }
 
     func update(mic: Float, system: Float) {
         lock.withLock {
@@ -138,7 +145,10 @@ final class LevelMeter: @unchecked Sendable {
             let filled = Int(value * 20)
             return String(repeating: "█", count: filled) + String(repeating: "·", count: 20 - filled)
         }
-        print("\rmic \(bar(mic))  system \(bar(system))", terminator: "")
+        var parts: [String] = []
+        if showMic { parts.append("mic \(bar(mic))") }
+        if showSystem { parts.append("system \(bar(system))") }
+        print("\r" + parts.joined(separator: "  "), terminator: "")
         fflush(stdout)
     }
 }

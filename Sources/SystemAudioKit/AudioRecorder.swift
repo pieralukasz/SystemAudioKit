@@ -66,7 +66,10 @@ public final class AudioRecorder: @unchecked Sendable {
     public func start(_ configuration: Configuration, in directory: URL) async throws {
         guard !isRecording else { throw SystemAudioError.alreadyRecording }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        // Sample 0 of every track and `Recording.startDate` refer to this same moment, even
+        // when creating the tap takes a while (the first run after an update waits for TCC).
         let startHostTime = HostClock.now
+        let startedAt = Date()
 
         var micWriter: AlignedTrackWriter?
         var sysWriter: AlignedTrackWriter?
@@ -118,7 +121,7 @@ public final class AudioRecorder: @unchecked Sendable {
             screenCapture = screen
             microphoneWriter = micWriter
             systemWriter = sysWriter
-            startDate = Date()
+            startDate = startedAt
         }
     }
 
