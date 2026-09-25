@@ -1,0 +1,46 @@
+---
+title: Introduction
+description: Record the microphone and what the Mac plays, as aligned tracks.
+---
+
+SystemAudioKit is a Swift package for call and meeting recorders on macOS. It records the microphone and the system audio (what the Mac plays) as separate WAV files on one timeline, so sample N of each file is the same moment.
+
+```swift
+import SystemAudioKit
+
+let recorder = AudioRecorder()
+try await recorder.start(.init(), in: folder)   // microphone + everything the Mac plays
+// …
+let recording = await recorder.stop()           // microphone.wav + system.wav
+```
+
+## Why separate tracks
+
+A single mixed file loses the one thing a recorder knows for sure: which voice came from the microphone. With two aligned tracks, a transcriber can label everything on the microphone as you and only has to tell the other participants apart. [ScribeKit](https://scribekit.lucaspiera.com) does exactly that.
+
+## What is inside
+
+- **`AudioRecorder`**: starts and stops the microphone and system audio together.
+- **Core Audio process taps** (macOS 14.2+) for system audio: everything the Mac plays, only chosen apps, or everything except some. No virtual audio driver, and the lighter "System Audio Recording Only" permission instead of Screen Recording.
+- **ScreenCaptureKit fallback** that writes the same aligned output.
+- **`AlignedTrackWriter`**: converts audio to one format and fills gaps with silence, so tracks stay in sync even when an app goes quiet.
+- **`MeetingDetector`**: notices when Zoom, Teams, Meet in a browser and other call apps start and stop using the microphone.
+- **`AudioMixer`**: mixes the tracks into one M4A or WAV.
+- Permission checks, device and process listing, and a `sysaudio` command for testing.
+
+## Requirements
+
+| | |
+| --- | --- |
+| macOS | 14.2 or later (process taps) |
+| Swift | 6.0 tools |
+| Info.plist | `NSMicrophoneUsageDescription`, `NSAudioCaptureUsageDescription` |
+
+## Where next
+
+<Cards>
+  <Card title="Installation" href="/docs/installation" description="Add the package and the Info.plist keys." />
+  <Card title="Permissions" href="/docs/permissions" description="Microphone, system audio and what the user sees." />
+  <Card title="Recording" href="/docs/recording" description="Configuration, levels, stopping and the files you get." />
+  <Card title="Meeting detection" href="/docs/meetings" description="Start recording when a call starts." />
+</Cards>

@@ -1,0 +1,80 @@
+---
+title: Recording
+description: Start, watch and stop a recording, and what ends up on disk.
+---
+
+## Start and stop
+
+```swift
+let recorder = AudioRecorder()
+try await recorder.start(.init(), in: folder)
+
+// later
+if let recording = await recorder.stop() {
+    print(recording.tracks)      // [microphone.wav, system.wav]
+    print(recording.duration)    // seconds
+}
+```
+
+`start` creates the folder if needed and writes `microphone.wav` and `system.wav` into it. If any part fails to start, everything is stopped again and the error is thrown. Calling `start` twice throws `SystemAudioError.alreadyRecording`.
+
+`stop` returns `nil` when nothing was recording.
+
+## Configuration
+
+```swift
+let configuration = AudioRecorder.Configuration(
+    microphone: .device(uid: savedUID),     // or .systemDefault, or nil for none
+    systemAudio: .apps(["us.zoom.xos"]),    // or .everything, .everythingExcept([...]), nil for none
+    backend: .processTap,                   // or .screenCaptureKit
+    format: .speech                         // 16 kHz mono
+)
+```
+
+| Field | Default | Notes |
+| --- | --- | --- |
+| `microphone` | `.systemDefault` | `.device(uid:)` falls back to the default input when that device is not connected. `nil` records no microphone. |
+| `systemAudio` | `.everything` | See [Choosing apps](/docs/choosing-apps). `nil` records no system audio. |
+| `backend` | `.processTap` | `.screenCaptureKit` records everything and ignores app selection. |
+| `format` | `.speech` | `TrackFormat(sampleRate:channels:)`. Files are 16-bit PCM WAV. |
+
+List microphones with `AudioDevices.inputs()` and store the `uid`, not the `id`: the numeric ID changes across reboots and replugs.
+
+## The files
+
+Both tracks share one timeline:
+
+- **Sample 0 is the moment `start` was called**, in every track. Setting up the tap can take a moment, especially while macOS shows the permission prompt; that time becomes silence at the start of the track instead of shifting it.
+- **Gaps are filled with silence.** A tap delivers nothing while no app plays sound. When audio resumes, the writer pads the gap, measured on the host clock. Gaps under 80 ms count as scheduling jitter and are not padded.
+- **Both tracks end at the moment `stop` was called**, so they have the same length.
+- Audio is converted to the configured format. Inputs with more than two channels, which happens when another app turns on voice processing, are reduced to their first channel.
+
+## Levels
+
+```swift
+recorder.onLevels = { microphone, system in
+    Task { @MainActor in meter.update(microphone, system) }
+}
+```
+
+Values run from 0 to 1 (RMS mapped from −50 to 0 dBFS). The closure is called on audio threads; hop to the main actor for UI. When a microphone is recorded, its buffers drive the calls.
+
+`recorder.elapsed` gives the seconds since `start`, and `isRecording` whether a recording runs.
+
+## Is the other side coming through?
+
+```swift
+if let peak = recorder.systemAudioPeak(), peak == 0 {
+    // No system audio since the last check.
+}
+```
+
+`systemAudioPeak()` returns the loudest level since the previous call and resets it. A zero during a call usually means the permission is missing or the call plays on a device the tap does not see.
+
+## Output device changes
+
+When the default output changes, for example when AirPods connect, the process tap is rebuilt for the new device. The tap runs on a private aggregate device with no physical subdevice and drift compensation turned on, so a Bluetooth headset switching to a 24 kHz call profile does not stop it. The short gap while it rebuilds is filled with silence.
+
+## Your own app's sound
+
+The `.everything` source excludes the recording process, so notification sounds and previews from your own app are not recorded. With ScreenCaptureKit, the same happens through `excludesCurrentProcessAudio`.

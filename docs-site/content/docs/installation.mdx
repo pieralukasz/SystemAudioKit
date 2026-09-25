@@ -1,0 +1,51 @@
+---
+title: Installation
+description: Add SystemAudioKit to your app.
+---
+
+## Swift Package Manager
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/pieralukasz/SystemAudioKit.git", from: "0.1.0"),
+],
+targets: [
+    .target(name: "MyApp", dependencies: ["SystemAudioKit"]),
+]
+```
+
+In Xcode, use **File → Add Package Dependencies…** and paste `https://github.com/pieralukasz/SystemAudioKit`.
+
+The package has no dependencies. It links CoreAudio, AudioToolbox, AVFoundation and ScreenCaptureKit, and needs macOS 14.2 or later.
+
+## Info.plist
+
+macOS refuses audio capture without usage descriptions. Add them to your app's Info.plist:
+
+```xml
+<key>NSMicrophoneUsageDescription</key>
+<string>Records your side of the call.</string>
+<key>NSAudioCaptureUsageDescription</key>
+<string>Records the other side of the call.</string>
+```
+
+Only if you use the ScreenCaptureKit backend:
+
+```xml
+<key>NSScreenCaptureUsageDescription</key>
+<string>Used only to record system audio. The screen is never recorded.</string>
+```
+
+A sandboxed app also needs the `com.apple.security.device.audio-input` entitlement for the microphone.
+
+## Try it without writing code
+
+The repository includes a `sysaudio` command:
+
+```bash
+git clone https://github.com/pieralukasz/SystemAudioKit.git
+cd SystemAudioKit
+swift run -c release sysaudio record 10 ./out
+```
+
+See [Command line](/docs/cli). When run from Terminal, the permission prompts name Terminal rather than your app.

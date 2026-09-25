@@ -1,0 +1,39 @@
+---
+title: Choosing apps
+description: Record everything, one app, or everything but some.
+---
+
+`SystemAudioSource` decides what the process tap hears:
+
+```swift
+.everything                                 // all apps except yours
+.apps(["us.zoom.xos"])                      // only these apps
+.everythingExcept(["com.spotify.client"])   // all except these, and except yours
+```
+
+Apps are given by bundle ID.
+
+## Helper processes
+
+Browsers and Electron apps play audio from helper processes, for example `com.google.Chrome.helper.renderer`. `.apps` and `.everythingExcept` trace each helper back to the app that owns it and include it, so `.apps(["com.google.Chrome"])` records a Meet call in Chrome.
+
+`AudioProcesses` shows what is running:
+
+```swift
+for process in AudioProcesses.playing() {
+    print(process.name, process.bundleID ?? "-", "→", process.appBundleID ?? "-")
+}
+```
+
+- `AudioProcesses.all()`: every process Core Audio knows.
+- `AudioProcesses.playing()`: only those producing output right now.
+- `appBundleID` follows a helper back to its app.
+- `isRunningInput` and `isRunningOutput` tell whether a process uses the microphone or plays sound.
+
+## When the app is not running
+
+The list of processes is taken when the recording starts. If none of the apps in `.apps` has an audio process yet, `start` throws `SystemAudioError.noMatchingProcesses`. Start the recording after the call app has opened its audio, or use `.everything`.
+
+## ScreenCaptureKit
+
+The ScreenCaptureKit backend always records all audio of the main display, minus your app. App selection only works with process taps.

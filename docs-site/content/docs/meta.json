@@ -1,0 +1,16 @@
+{
+  "title": "SystemAudioKit",
+  "pages": [
+    "index",
+    "installation",
+    "permissions",
+    "---Guides---",
+    "recording",
+    "choosing-apps",
+    "meetings",
+    "mixing",
+    "---Reference---",
+    "api",
+    "cli"
+  ]
+}

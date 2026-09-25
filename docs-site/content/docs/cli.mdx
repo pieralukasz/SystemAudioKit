@@ -1,0 +1,37 @@
+---
+title: Command line
+description: The sysaudio command that ships with the package.
+---
+
+`sysaudio` exercises the package from a terminal. Run it from a clone of the repository:
+
+```bash
+swift run -c release sysaudio <command>
+```
+
+macOS attributes the permissions to the terminal app you run it from.
+
+| Command | What it does |
+| --- | --- |
+| `devices` | Lists inputs and outputs with transport and UID. `*` marks the default. |
+| `processes` | Lists audio processes: input/output flags, PID, name, bundle ID and owning app. |
+| `meetings` | Shows call apps using the microphone right now. |
+| `permissions` | Prints the microphone, system audio and Screen Recording status. |
+| `record <seconds> <folder> [options]` | Records, with a live level meter. |
+| `mix <out.wav or out.m4a> <track.wav>...` | Mixes tracks into one file. |
+
+## record
+
+```bash
+swift run -c release sysaudio record 10 ./out
+swift run -c release sysaudio record 30 ./out --app us.zoom.xos --no-mic
+```
+
+| Option | Effect |
+| --- | --- |
+| `--no-mic` | No microphone track. |
+| `--no-system` | No system audio track. |
+| `--app <bundle id>` | Record only this app. Repeat for more apps. |
+| `--screencapture` | Use ScreenCaptureKit instead of a process tap. |
+
+When it finishes, `record` prints the length and peak of each track and, with two tracks, writes `mixed.m4a` next to them. The first run triggers the permission prompt, and the system track stays silent until you allow it.

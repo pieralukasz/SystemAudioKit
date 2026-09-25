@@ -1,0 +1,58 @@
+---
+title: Meeting detection
+description: Notice when a call starts and ends.
+---
+
+`MeetingDetector` watches which call apps are using the microphone. That is the most reliable sign that a call is running: it works for native apps and for calls in a browser, and it needs no permission, since it reads Core Audio's per-process "running input" flag and never touches audio.
+
+```swift
+let detector = MeetingDetector()
+detector.onChange = { started, ended in
+    for meeting in started { print("\(meeting.appName) call started") }
+    for meeting in ended { print("\(meeting.appName) call ended") }
+}
+detector.start()
+```
+
+`start` and `stop` run on the main actor, and `onChange` is called on the main queue.
+
+## Timing
+
+| Property | Default | Meaning |
+| --- | --- | --- |
+| `startDelay` | 4 s | How long an app must keep the microphone before it counts, so a voice note or a permission check is ignored. |
+| `endDelay` | 8 s | How long without the microphone before a call counts as ended. Some apps release it briefly when you mute. |
+| `start(interval:)` | 2 s | Polling interval. |
+
+Polling is used on purpose: Core Audio's process-list notifications do not fire when an existing process starts using the microphone.
+
+`detector.active` lists the calls in progress, and `currentMeetings()` returns the apps using the microphone right now, without any delay.
+
+## Which apps
+
+`MeetingDetector.knownApps` maps bundle IDs to names:
+
+Zoom, Microsoft Teams (both versions), Slack, Discord, FaceTime, WhatsApp, Webex, Signal, Telegram, and the browsers Chrome, Brave, Edge, Arc, Safari, Firefox, Vivaldi and Opera.
+
+A browser only counts while it uses the microphone, which covers Google Meet, Teams on the web and similar. Pass your own list to watch other apps:
+
+```swift
+var apps = MeetingDetector.knownApps
+apps["com.example.CallApp"] = "Example"
+let detector = MeetingDetector(watchedApps: apps, startDelay: 2, endDelay: 10)
+```
+
+## Recording only the call
+
+`DetectedMeeting.bundleID` plugs straight into a source:
+
+```swift
+detector.onChange = { started, _ in
+    guard let meeting = started.first else { return }
+    Task {
+        try await recorder.start(.init(systemAudio: .apps([meeting.bundleID])), in: folder)
+    }
+}
+```
+
+For browsers, `.everything` is often the better choice: the call may play from a different tab or helper than the one holding the microphone.

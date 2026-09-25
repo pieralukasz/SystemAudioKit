@@ -1,0 +1,50 @@
+---
+title: Permissions
+description: Microphone, system audio and Screen Recording.
+---
+
+| What | macOS setting | Needed for |
+| --- | --- | --- |
+| Microphone | Privacy & Security → Microphone | The microphone track |
+| System Audio Recording Only | Privacy & Security → Screen & System Audio Recording | Process taps (the default backend) |
+| Screen Recording | Privacy & Security → Screen & System Audio Recording | Only the ScreenCaptureKit backend |
+
+## Checking and asking
+
+```swift
+AudioPermissions.microphone      // .authorized, .denied, .notDetermined or .unknown
+AudioPermissions.systemAudio
+AudioPermissions.screenRecording
+
+await AudioPermissions.requestMicrophone()
+await AudioPermissions.requestSystemAudio()
+```
+
+Ask during onboarding, not at the first call: the system audio prompt appears on top of whatever the user is doing.
+
+`AudioRecorder.start` asks for the microphone itself when it has not been asked yet, and throws `SystemAudioError.microphonePermissionDenied` when access is off.
+
+### System audio has no public check
+
+macOS has no public API to check the system audio permission. `AudioPermissions.systemAudio` and `requestSystemAudio()` call the private TCC framework (`TCCAccessPreflight` and `TCCAccessRequest` for `kTCCServiceAudioCapture`), loaded at run time. That works for Developer ID and locally built apps, but do not use these two in a Mac App Store app. When the symbols are missing, the status is `.unknown`; just start recording and let macOS show its prompt.
+
+Without the permission, the tap starts but delivers silence. `recorder.systemAudioPeak()` tells you whether any sound arrived; see [Recording](/docs/recording#is-the-other-side-coming-through).
+
+## Opening System Settings
+
+```swift
+NSWorkspace.shared.open(AudioPermissions.settingsURL(for: .systemAudio))
+```
+
+Panes: `.microphone`, `.systemAudio`, `.screenRecording`.
+
+## Keeping permissions across builds
+
+macOS ties a grant to the app's code signature. An ad-hoc signed app gets a new signature with every build, and macOS forgets the grant. For local builds, sign with a designated requirement that names only the bundle identifier:
+
+```bash
+codesign --force --deep --sign - --identifier "$BUNDLE_ID" \
+    --requirements "=designated => identifier \"$BUNDLE_ID\"" MyApp.app
+```
+
+Apps signed with a Developer ID certificate keep their grants anyway.

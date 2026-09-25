@@ -1,0 +1,29 @@
+---
+title: Mixing
+description: Combine the tracks into one file for listening.
+---
+
+Keep the separate tracks for transcription, and mix a copy for people to listen to:
+
+```swift
+try recording.mix(to: folder.appendingPathComponent("call.m4a"))
+```
+
+or for any files with the same format:
+
+```swift
+try AudioMixer.mix([micURL, systemURL], to: outputURL)
+```
+
+| Extension | Output |
+| --- | --- |
+| `.m4a`, `.aac` | AAC, 32 kbit/s at 16 kHz or lower, 64 kbit/s above |
+| `.wav` | 16-bit PCM |
+
+Anything else throws `AudioMixer.Error.unsupportedExtension`.
+
+## How it mixes
+
+The tracks are summed sample by sample, each scaled by 1/√n rather than 1/n. In a call usually one side talks at a time, so this keeps speech from getting quieter than in the original tracks. Peaks above 0.9 are soft clipped instead of cut off.
+
+The tracks must share sample rate and channel count, which `AudioRecorder` guarantees. A shorter track counts as silence after its end.

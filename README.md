@@ -14,6 +14,8 @@ Record the microphone and what the Mac plays, as separate tracks on one timeline
   browser (for Meet and other web calls) starts using the microphone, and when it stops.
 - Mixing to a single M4A or WAV, permission checks, device and process listing.
 
+Documentation: **[systemaudiokit.lucaspiera.com](https://systemaudiokit.lucaspiera.com)**
+
 Used by [EchoPad](https://github.com/pieralukasz/echopad).
 
 ## Install
