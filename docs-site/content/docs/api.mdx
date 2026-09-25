@@ -1,0 +1,138 @@
+---
+title: API reference
+description: Every public type in SystemAudioKit.
+---
+
+## AudioRecorder
+
+`public final class AudioRecorder`: records the microphone and system audio together.
+
+| Member | Description |
+| --- | --- |
+| `init()` | A new recorder. |
+| `start(_ configuration:, in directory:) async throws` | Starts recording into `directory`, writing `microphone.wav` and/or `system.wav`. |
+| `stop() async -> Recording?` | Stops and returns the finished tracks, padded to the same length. `nil` when nothing was recording. |
+| `isRecording: Bool` | Whether a recording runs. |
+| `elapsed: TimeInterval` | Seconds since `start`. |
+| `onLevels: ((Float, Float) -> Void)?` | Live microphone and system levels, 0 to 1, called on audio threads. |
+| `systemAudioPeak() -> Float?` | Loudest system level since the last call, then resets. `nil` without a system track. |
+
+### AudioRecorder.Configuration
+
+<TypeTable
+  type={{
+    microphone: { type: "Microphone?", default: ".systemDefault", description: ".systemDefault or .device(uid:). nil records no microphone." },
+    systemAudio: { type: "SystemAudioSource?", default: ".everything", description: "What system audio to record. nil records none." },
+    backend: { type: "SystemAudioBackend", default: ".processTap", description: ".processTap or .screenCaptureKit." },
+    format: { type: "TrackFormat", default: ".speech", description: "Sample rate and channels of the files." },
+  }}
+/>
+
+## Recording
+
+A finished recording. `Sendable`, `Equatable`.
+
+<TypeTable
+  type={{
+    microphoneURL: { type: "URL?", description: "The microphone track, if recorded." },
+    systemAudioURL: { type: "URL?", description: "The system audio track, if recorded." },
+    startDate: { type: "Date", description: "When start was called. Sample 0 of every track." },
+    duration: { type: "TimeInterval", description: "Seconds from start to stop." },
+    tracks: { type: "[URL]", description: "The tracks that exist." },
+  }}
+/>
+
+- `mix(to url: URL) throws`: mixes all tracks into one `.wav` or `.m4a`. See [Mixing](/docs/mixing).
+
+## SystemAudioSource
+
+- `.everything`: everything the Mac plays, except this app.
+- `.apps([String])`: only these bundle IDs, including their helper processes.
+- `.everythingExcept([String])`: everything except these apps and this app.
+
+## SystemAudioBackend
+
+- `.processTap`: Core Audio process tap. Default. Supports app selection.
+- `.screenCaptureKit`: display audio through ScreenCaptureKit. Needs Screen Recording and always records everything.
+
+## TrackFormat
+
+`sampleRate: Double` (default 16 000) and `channels: AVAudioChannelCount` (default 1). `TrackFormat.speech` is the default. Files are written as 16-bit PCM WAV.
+
+## AudioPermissions
+
+| Member | Description |
+| --- | --- |
+| `microphone`, `systemAudio`, `screenRecording` | `Status`: `.authorized`, `.denied`, `.notDetermined` or `.unknown`. |
+| `requestMicrophone() async -> Bool` | Shows the microphone prompt. |
+| `requestSystemAudio() async -> Bool` | Shows the system audio prompt. Uses private TCC calls. |
+| `settingsURL(for: Pane) -> URL` | Opens `.microphone`, `.systemAudio` or `.screenRecording` in System Settings. |
+
+See [Permissions](/docs/permissions) for the caveats of the system audio check.
+
+## MeetingDetector
+
+| Member | Description |
+| --- | --- |
+| `init(watchedApps:startDelay:endDelay:)` | Defaults: `knownApps`, 4 s, 8 s. |
+| `static knownApps: [String: String]` | Bundle ID to name for common call apps and browsers. |
+| `onChange: ((started, ended) -> Void)?` | Called on the main queue. |
+| `active: [DetectedMeeting]` | Calls in progress. |
+| `start(interval:)`, `stop()` | Polling on the main run loop. Default interval 2 s. |
+| `currentMeetings() -> [DetectedMeeting]` | Apps using the microphone right now, without delays. |
+
+`DetectedMeeting`: `bundleID`, `appName`, `processIDs`.
+
+## AudioDevices
+
+| Member | Description |
+| --- | --- |
+| `inputs()`, `outputs() -> [AudioDevice]` | Physical devices. Virtual and aggregate devices are left out. |
+| `input(uid:) -> AudioDevice?` | The connected input with this UID. |
+| `defaultInputID`, `defaultOutputID` | Core Audio IDs of the defaults. |
+
+`AudioDevice`: `id`, `uid` (stable, store this one), `name`, `isDefault`, `transport` (`.builtIn`, `.usb`, `.bluetooth`, `.virtual`, `.aggregate`, `.other`).
+
+## AudioProcesses
+
+| Member | Description |
+| --- | --- |
+| `all() -> [AudioProcess]` | Every process Core Audio knows. |
+| `playing() -> [AudioProcess]` | Processes producing output now. |
+| `objectID(for pid:) -> AudioObjectID?` | The Core Audio object of a process. |
+| `objectIDs(forApp bundleID:) -> [AudioObjectID]` | An app's processes, including helpers. |
+
+`AudioProcess`: `id`, `pid`, `bundleID`, `appBundleID` (helpers followed to their app), `name`, `isRunningInput`, `isRunningOutput`.
+
+## AudioMixer
+
+- `mix(_ inputs: [URL], to output: URL) throws`: sums tracks with 1/√n gain and soft clipping.
+- `AudioMixer.Error`: `.noTracks`, `.unsupportedExtension(String)`.
+
+## Lower level
+
+`AudioRecorder` is built from parts you can use directly:
+
+| Type | Description |
+| --- | --- |
+| `AlignedTrackWriter` | Writes buffers to a WAV file on a host-time timeline, filling gaps with silence. `init(url:format:startHostTime:)`, `append(_:hostTime:)`, `finish(at:)`, `duration`, `takePeak()`, `onLevel`. |
+| `ProcessTapCapture` | A process tap feeding a writer. `start(source:writer:)`, `stop()`, `lastBuffer`. |
+| `MicrophoneCapture` | A microphone feeding a writer. `start(deviceUID:writer:)`, `stop()`. |
+| `ScreenCaptureAudioCapture` | ScreenCaptureKit audio feeding a writer. `start(writer:excludingOwnAudio:)`, `stop()`. |
+| `HostClock` | `now` (`mach_absolute_time`) and `seconds(from:to:)`. |
+| `AudioLevel` | `normalized(_:)`: RMS of a buffer mapped from −50 to 0 dBFS onto 0 to 1. |
+
+Give every writer of one recording the same `startHostTime`, so their sample 0 is the same moment.
+
+## Errors
+
+`SystemAudioError`:
+
+- `.microphoneUnavailable`: no input device.
+- `.microphonePermissionDenied`, `.systemAudioPermissionDenied`.
+- `.noMatchingProcesses([String])`: none of the apps in `.apps` has an audio process.
+- `.noDisplay`: ScreenCaptureKit found no display.
+- `.tapFormatUnavailable`: the tap's audio format could not be read.
+- `.alreadyRecording`.
+
+`CoreAudioError` carries the `OSStatus` and the operation that failed.
