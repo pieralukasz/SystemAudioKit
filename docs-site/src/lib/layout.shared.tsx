@@ -5,7 +5,7 @@ export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
       title: (
-        <span className="inline-flex items-center gap-2 font-semibold">
+        <span className="inline-flex items-center gap-2 font-mono font-semibold tracking-tight">
           {/* biome-ignore lint/performance/noImgElement: static export serves plain files */}
           <img
             src={asset("/logo.svg")}

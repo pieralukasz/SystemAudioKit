@@ -60,86 +60,88 @@ const install = `dependencies: [
 
 export default function HomePage() {
   return (
-    <main className="flex flex-col">
-      <section className="hero-glow">
-        <div className="mx-auto flex max-w-5xl flex-col items-center px-6 pt-20 pb-14 text-center">
+    <main className="mx-auto flex w-full max-w-4xl flex-col px-6">
+      <section className="pt-16 pb-12">
+        <div className="mb-8 flex flex-wrap items-center gap-3 font-mono text-xs text-fd-muted-foreground">
           {/* biome-ignore lint/performance/noImgElement: static export serves plain files */}
           <img
             src={asset("/logo.svg")}
             alt=""
-            width={88}
-            height={88}
-            className="mb-6 drop-shadow-xl"
+            width={32}
+            height={32}
+            className="rounded-md"
           />
-          <span className="mb-5 rounded-full border bg-fd-card px-3 py-1 text-xs font-medium text-fd-muted-foreground">
-            Swift package · MIT · macOS 14.2
-          </span>
-          <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
-            Your mic and the call,{" "}
-            <span className="text-fd-primary">in sync.</span>
-          </h1>
-          <p className="mt-5 max-w-2xl text-lg text-fd-muted-foreground">
-            SystemAudioKit records the microphone and what your Mac plays as
-            separate WAV files on one timeline. Built for call and meeting
-            recorders, with no virtual audio driver to install.
-          </p>
-          <CallToAction className="mt-8 justify-center" />
+          <span>{appName}</span>
+          <span aria-hidden="true">/</span>
+          <span>Swift package · MIT · macOS 14.2</span>
         </div>
-        <div className="mx-auto grid w-full gap-6 px-6 pb-20 text-left max-w-3xl [&>div]:min-w-0">
-          <div>
-            <p className="mb-2 text-sm font-semibold text-fd-muted-foreground">
-              Package.swift
-            </p>
-            <DynamicCodeBlock lang="swift" code={install} />
-            <p className="mt-5 text-sm text-fd-muted-foreground">
-              Swift 6. Add NSMicrophoneUsageDescription and
-              NSAudioCaptureUsageDescription to your app’s Info.plist.
-            </p>
-          </div>
-          <div>
-            <p className="mb-2 text-sm font-semibold text-fd-muted-foreground">
-              Record a call
-            </p>
-            <DynamicCodeBlock lang="swift" code={example} />
-          </div>
-        </div>
+        <h1 className="text-4xl font-bold sm:text-5xl">
+          Your mic and the call,{" "}
+          <span className="text-sak-accent">in sync.</span>
+        </h1>
+        <p className="mt-5 max-w-2xl text-lg text-fd-muted-foreground">
+          SystemAudioKit records the microphone and what your Mac plays as
+          separate WAV files on one timeline. Built for call and meeting
+          recorders, with no virtual audio driver to install.
+        </p>
+        <p className="mt-6 overflow-x-auto rounded-md border bg-fd-card px-4 py-3 font-mono text-sm whitespace-nowrap">
+          <span className="select-none text-sak-accent">$ </span>
+          <span>swift package add-dependency {repoUrl}.git --from 0.1.0</span>
+        </p>
+        <CallToAction className="mt-8" />
       </section>
+
+      <Rule />
+
+      <div className="grid gap-10 py-12 [&>div]:min-w-0">
+        <div>
+          <Label>Package.swift</Label>
+          <DynamicCodeBlock lang="swift" code={install} />
+          <p className="mt-5 text-sm text-fd-muted-foreground">
+            Swift 6. Add NSMicrophoneUsageDescription and
+            NSAudioCaptureUsageDescription to your app’s Info.plist.
+          </p>
+        </div>
+        <div>
+          <Label>Record a call</Label>
+          <DynamicCodeBlock lang="swift" code={example} />
+        </div>
+      </div>
+
+      <Rule />
 
       <Section
         eyebrow="What you get"
         title="System audio capture without the driver"
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <dl className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
           {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="rounded-2xl border bg-fd-card p-6"
-            >
-              <feature.icon className="mb-4 size-6 text-fd-primary" />
-              <h3 className="font-semibold">{feature.title}</h3>
-              <p className="mt-1 text-sm text-fd-muted-foreground">
+            <div key={feature.title}>
+              <dt className="flex items-center gap-2 font-mono text-sm font-semibold">
+                <feature.icon className="size-4 shrink-0 text-sak-accent" />
+                {feature.title}
+              </dt>
+              <dd className="mt-2 text-sm text-fd-muted-foreground">
                 {feature.text}
-              </p>
+              </dd>
             </div>
           ))}
-        </div>
+        </dl>
       </Section>
 
-      <section className="mx-auto w-full max-w-5xl px-6 pb-24">
-        <div className="hero-glow rounded-3xl border bg-fd-card px-8 py-14 text-center">
-          <h2 className="text-3xl font-bold tracking-tight">
-            Two tracks, one timeline
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-fd-muted-foreground">
-            Start a recorder, stop it, get microphone.wav and system.wav of the
-            same length. The guides cover permissions, app selection and meeting
-            detection.
-          </p>
-          <CallToAction className="mt-8 justify-center" />
-        </div>
+      <Rule />
+
+      <section className="py-12">
+        <h2 className="text-2xl font-bold">Two tracks, one timeline</h2>
+        <p className="mt-3 max-w-xl text-fd-muted-foreground">
+          Start a recorder, stop it, get microphone.wav and system.wav of the
+          same length. The guides cover permissions, app selection and meeting
+          detection.
+        </p>
+        <CallToAction className="mt-8" />
       </section>
 
-      <footer className="border-t py-10 text-center text-sm text-fd-muted-foreground">
+      <footer className="border-t py-10 text-sm text-fd-muted-foreground">
         <p>
           {appName} is MIT licensed. Made by{" "}
           <a
@@ -159,18 +161,33 @@ export default function HomePage() {
   );
 }
 
+function Rule() {
+  return <hr className="border-fd-border" />;
+}
+
+function Label({ children }: { children: ReactNode }) {
+  return (
+    <p className="mb-2 font-mono text-xs text-fd-muted-foreground">
+      <span className="text-sak-accent"># </span>
+      {children}
+    </p>
+  );
+}
+
 function CallToAction({ className }: { className?: string }) {
   return (
-    <div className={`flex flex-wrap gap-3 ${className ?? ""}`}>
+    <div
+      className={`flex flex-wrap gap-3 font-mono text-sm ${className ?? ""}`}
+    >
       <Link
         href="/docs"
-        className="rounded-full bg-fd-primary px-6 py-3 font-medium text-fd-primary-foreground transition hover:opacity-90"
+        className="rounded-md bg-fd-primary px-5 py-2.5 font-medium text-fd-primary-foreground transition hover:opacity-90"
       >
         Read the docs
       </Link>
       <a
         href={repoUrl}
-        className="inline-flex items-center gap-2 rounded-full border bg-fd-card px-6 py-3 font-medium transition hover:bg-fd-accent"
+        className="inline-flex items-center gap-2 rounded-md border px-5 py-2.5 font-medium transition hover:bg-fd-accent"
       >
         <GitHubMark /> View on GitHub
       </a>
@@ -188,11 +205,12 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="mx-auto w-full max-w-5xl px-6 py-16">
-      <p className="text-sm font-semibold uppercase tracking-wider text-fd-primary">
+    <section className="py-12">
+      <p className="font-mono text-xs text-fd-muted-foreground">
+        <span className="text-sak-accent">## </span>
         {eyebrow}
       </p>
-      <h2 className="mt-2 mb-8 text-3xl font-bold tracking-tight">{title}</h2>
+      <h2 className="mt-2 mb-8 text-2xl font-bold">{title}</h2>
       {children}
     </section>
   );

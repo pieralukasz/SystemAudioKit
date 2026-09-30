@@ -1,18 +1,37 @@
 @import "tailwindcss";
-@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/black.css";
 @import "fumadocs-ui/css/preset.css";
 
-/* SystemAudioKit accent, matched to the logo. */
+/* Monochrome base from the black preset. The logo teal stays as a small
+   accent for links, the active page and the shell prompt. */
+@theme inline {
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+}
+
 @theme {
-  --color-fd-primary: hsl(178, 84%, 30%);
-  --color-fd-primary-foreground: hsl(0, 0%, 100%);
-  --color-fd-ring: hsl(178, 84%, 30%);
+  --color-sak-accent: hsl(178, 84%, 25%);
 }
 
 .dark {
-  --color-fd-primary: hsl(172, 70%, 55%);
-  --color-fd-primary-foreground: hsl(180, 60%, 8%);
-  --color-fd-ring: hsl(172, 70%, 55%);
+  --color-sak-accent: hsl(172, 70%, 55%);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-mono);
+  letter-spacing: -0.02em;
+}
+
+.prose a:not([data-card]) {
+  text-decoration-color: var(--color-sak-accent);
+}
+
+#nd-sidebar a[data-active="true"],
+#nd-sidebar-mobile a[data-active="true"],
+#nd-toc a[data-active="true"] {
+  color: var(--color-sak-accent);
 }
 
 html {
@@ -25,20 +44,6 @@ html > body[data-scroll-locked] {
   margin-right: 0px !important;
   /* biome-ignore lint/complexity/noImportantStyles: same override for the CSS variable */
   --removed-body-scroll-bar-size: 0px !important;
-}
-
-.hero-glow {
-  background:
-    radial-gradient(
-      60% 50% at 50% 0%,
-      hsla(178, 80%, 40%, 0.22),
-      transparent 70%
-    ),
-    radial-gradient(
-      40% 40% at 85% 20%,
-      hsla(210, 80%, 60%, 0.12),
-      transparent 70%
-    );
 }
 
 /* One-line steps are shorter than their 2rem number badge, so the badges

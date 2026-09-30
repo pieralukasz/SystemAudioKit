@@ -1,13 +1,15 @@
-import { DocsLayout } from "fumadocs-ui/layouts/docs";
+import { DocsLayout } from "fumadocs-ui/layouts/notebook";
 import { baseOptions } from "@/lib/layout.shared";
 import { authorUrl } from "@/lib/shared";
 import { source } from "@/lib/source";
 
 export default function Layout({ children }: LayoutProps<"/docs">) {
+  const base = baseOptions();
   return (
     <DocsLayout
       tree={source.getPageTree()}
-      {...baseOptions()}
+      {...base}
+      nav={{ ...base.nav, mode: "top" }}
       sidebar={{
         footer: (
           <p className="px-2 pt-2 text-xs text-fd-muted-foreground">
