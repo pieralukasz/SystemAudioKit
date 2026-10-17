@@ -2,7 +2,7 @@ import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
 import { AppWindow, AudioLines, Bell, Mic, Monitor, Timer } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { appName, asset, authorUrl, repoUrl } from "@/lib/shared";
+import { appName, asset, authorUrl, gitConfig, repoUrl } from "@/lib/shared";
 
 const features = [
   {
@@ -72,7 +72,9 @@ export default function HomePage() {
             className="rounded-md"
           />
           <span>{appName}</span>
-          <span aria-hidden="true">/</span>
+          <span aria-hidden="true" className="max-sm:hidden">
+            /
+          </span>
           <span>Swift package · MIT · macOS 14.2</span>
         </div>
         <h1 className="text-4xl font-bold sm:text-5xl">
@@ -84,9 +86,16 @@ export default function HomePage() {
           separate WAV files on one timeline. Built for call and meeting
           recorders, with no virtual audio driver to install.
         </p>
-        <p className="mt-6 overflow-x-auto rounded-md border bg-fd-card px-4 py-3 font-mono text-sm whitespace-nowrap">
-          <span className="select-none text-sak-accent">$ </span>
-          <span>swift package add-dependency {repoUrl}.git --from 0.1.0</span>
+        {/* Phones: wrap the command under the prompt instead of clipping the URL. */}
+        <p className="mt-6 overflow-x-auto rounded-md border bg-fd-card px-4 py-3 font-mono text-sm whitespace-nowrap max-sm:flex max-sm:gap-[1ch] max-sm:whitespace-normal">
+          <span className="select-none text-sak-accent max-sm:shrink-0">
+            ${" "}
+          </span>
+          <span className="max-sm:min-w-0 max-sm:[overflow-wrap:anywhere]">
+            swift package add-dependency https://github.com/{gitConfig.user}/
+            <wbr />
+            {gitConfig.repo}.git --from 0.1.0
+          </span>
         </p>
         <CallToAction className="mt-8" />
       </section>
