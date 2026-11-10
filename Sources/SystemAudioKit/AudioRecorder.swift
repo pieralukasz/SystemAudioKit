@@ -42,6 +42,11 @@ public final class AudioRecorder: @unchecked Sendable {
     /// Live loudness, 0…1, per track. Called on audio threads; hop to the main actor for UI.
     public var onLevels: (@Sendable (_ microphone: Float, _ system: Float) -> Void)?
 
+    /// Set before ``start(_:in:)`` to receive the written audio of both tracks while recording
+    /// (for live transcription). The files are written first and do not depend on the feed;
+    /// ``stop()`` finishes it. Nil (the default) costs nothing.
+    public var liveFeed: LiveAudioFeed?
+
     private let lock = NSLock()
     private var microphone: MicrophoneCapture?
     private var tap: ProcessTapCapture?
@@ -82,6 +87,7 @@ public final class AudioRecorder: @unchecked Sendable {
                 let writer = try AlignedTrackWriter(url: directory.appendingPathComponent("system.wav"),
                                                     format: configuration.format, startHostTime: startHostTime)
                 writer.onLevel = { [weak self] level in self?.update(system: level) }
+                if let feed = liveFeed { writer.onSamples = { feed.push(.system, startFrame: $0, samples: $1) } }
                 sysWriter = writer
                 switch configuration.backend {
                 case .processTap:
@@ -100,6 +106,7 @@ public final class AudioRecorder: @unchecked Sendable {
                 let writer = try AlignedTrackWriter(url: directory.appendingPathComponent("microphone.wav"),
                                                     format: configuration.format, startHostTime: startHostTime)
                 writer.onLevel = { [weak self] level in self?.update(microphone: level) }
+                if let feed = liveFeed { writer.onSamples = { feed.push(.microphone, startFrame: $0, samples: $1) } }
                 micWriter = writer
                 let capture = MicrophoneCapture()
                 let uid: String? = if case .device(let uid) = choice { uid } else { nil }
@@ -112,6 +119,7 @@ public final class AudioRecorder: @unchecked Sendable {
             await screen?.stop()
             micWriter?.finish()
             sysWriter?.finish()
+            liveFeed?.finish()
             throw error
         }
 
@@ -142,6 +150,7 @@ public final class AudioRecorder: @unchecked Sendable {
         await state.2?.stop()
         state.3?.finish(at: stopHostTime)
         state.4?.finish(at: stopHostTime)
+        liveFeed?.finish()
         return Recording(
             microphoneURL: state.3?.url,
             systemAudioURL: state.4?.url,

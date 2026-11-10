@@ -63,6 +63,11 @@ public final class AlignedTrackWriter: @unchecked Sendable {
     /// Called with a 0...1 loudness per appended buffer, on the caller's thread.
     public var onLevel: (@Sendable (Float) -> Void)?
 
+    /// Called with every block written to the file (first channel, padding included) and its
+    /// frame position in the file, on the writing thread while the writer is locked: hand the
+    /// samples off (``LiveAudioFeed/push(_:startFrame:samples:)``) and return at once.
+    public var onSamples: (@Sendable (_ startFrame: Int64, _ samples: [Float]) -> Void)?
+
     /// - Parameter startHostTime: Host time (`mach_absolute_time`) that sample 0 represents.
     ///   Pass the same value to every track of one recording.
     public init(url: URL, format: TrackFormat = .speech, startHostTime: UInt64) throws {
@@ -135,6 +140,9 @@ public final class AlignedTrackWriter: @unchecked Sendable {
     private func write(_ buffer: AVAudioPCMBuffer, to file: AVAudioFile) {
         do {
             try file.write(from: buffer)
+            if let onSamples, let data = buffer.floatChannelData {
+                onSamples(Int64(writtenFrames), Array(UnsafeBufferPointer(start: data[0], count: Int(buffer.frameLength))))
+            }
             writtenFrames += AVAudioFramePosition(buffer.frameLength)
         } catch {
             // A failed write drops one buffer; the next gap check restores alignment.
