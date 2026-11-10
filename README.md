@@ -58,6 +58,24 @@ detector.onChange = { started, ended in
 detector.start()
 ```
 
+## Live audio
+
+Set `recorder.liveFeed = LiveAudioFeed()` before `start` to receive what is written to both
+tracks while recording (16 kHz mono by default, silence padding included, `startFrame` = sample
+position in the file, both tracks on one timeline):
+
+```swift
+let feed = LiveAudioFeed(capacitySeconds: 30)
+recorder.liveFeed = feed
+try await recorder.start(configuration, in: folder)
+Task { while let chunk = await feed.next() { /* chunk.track, chunk.startFrame, chunk.samples */ } }
+```
+
+The files are written first and never wait for the feed: `push` takes a short lock and returns.
+When more than `capacitySeconds` waits unread, new audio is dropped, counted in `droppedFrames`
+and announced on the next chunk (`droppedFramesBefore`); it is never lost silently. `stop()`
+finishes the feed, so `next()` returns nil after the last chunk.
+
 ## Command line
 
 ```bash
